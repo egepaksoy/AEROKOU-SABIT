@@ -7,10 +7,10 @@ from flask import Flask
 #from picamera2 import Picamera2
 
 from pymavlink_custom.pymavlink_custom import Vehicle
-#from libs.mqtt_controller import magnet_control, rotate_servo, cleanup
+from libs.mqtt_controller import magnet_control, rotate_servo, cleanup
 from libs.image_handler import image_recog_flask
 
-#TODO: ucus oncesi parametrelerden WPNAV_SPEED parametresini 5 yapmak lazim (yavaslatsin diye)
+#TODO: ucus oncesi parametrelerden WPNAV_SPEED parametresini 2 yapmak lazim (yavaslatsin diye)
 def failsafe(vehicle, home_pos=None):
     def failsafe_drone_id(vehicle, drone_id, home_pos=None):
         if home_pos == None:
