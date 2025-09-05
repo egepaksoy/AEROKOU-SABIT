@@ -4,10 +4,10 @@ import time
 import json
 import threading
 from flask import Flask
-#from picamera2 import Picamera2
+import sys
 
 from pymavlink_custom.pymavlink_custom import Vehicle
-from libs.mqtt_controller import magnet_control, rotate_servo, cleanup
+from libs.mqtt_controller import ESP_Controller, Servo_Control
 from libs.image_handler import image_recog_flask
 
 #TODO: ucus oncesi parametrelerden WPNAV_SPEED parametresini 2 yapmak lazim (yavaslatsin diye)
@@ -293,22 +293,26 @@ def ortala(obj_origin, DRONE_ID, shared_state, shared_state_lock, orta_oran, car
     
     return False
 
-def drop_obj(miknatis):
+def drop_obj(miknatis, magnet_control: ESP_Controller):
     start_time = time.time()
     while time.time() - start_time < 2 and not stop_event.is_set():
         time.sleep(0.05)
 
-    #! Test
+    print(f"miknatis {miknatis} kapatiliyor")
     if miknatis == 2:
-        magnet_control(True, False)
+        magnet_control.magnet_control(True, False)
     else:
-        magnet_control(False, True)
-    print(f"mıknatıs {miknatis} kapatıldı")
+        magnet_control.magnet_control(False, True)
 
     start_time = time.time()
-    while time.time() - start_time < 3 and not stop_event.is_set():
-        time.sleep(0.05)
+    while time.time() - start_time < 2 and not stop_event.is_set():
+        if miknatis == 2:
+            magnet_control.magnet_control(True, False)
+        else:
+            magnet_control.magnet_control(False, True)
+        time.sleep(0.75)
 
+    print(f"mıknatıs {miknatis} kapatıldı")
     return True
 
 def go_home(stop_event, vehicle: Vehicle, home_pos, DRONE_ID):
@@ -338,15 +342,24 @@ dropped_objects = []
 sonra_birakilcak_obj = None
 sonra_birakilcak_pos = None
 
-'''
-picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
-picam2.start()
-time.sleep(2)  # Kamera başlatma süresi için bekle
-'''
-cap = cv2.VideoCapture(0)
+if len(sys.argv) == 2:
+    if sys.argv[1] == "test":
+        cap = cv2.VideoCapture(0)
+    
+    else:
+        raise ValueError("Test etmek icin kodu test ile baslatin: python gorev2.py test")
+
+if "cap" not in locals():
+    from picamera2 import Picamera2
+
+    cap = Picamera2()
+    cap.configure(cap.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
+    cap.start()
+    time.sleep(2)  # Kamera başlatma süresi için bekle
 
 orta_oran = config["ORTA"]
+
+magnet_control = ESP_Controller()
 
 # Görüntü işleme
 app = Flask(__name__)
@@ -356,6 +369,7 @@ port = config["UDP-PORT"]
 threading.Thread(target=image_recog_flask, args=(cap, port, broadcast_started, stop_event, shared_state, shared_state_lock, orta_oran), daemon=True).start()
 
 # Erkenden miknatisi calistirma
+magnet_control.magnet_control(True, True)
 input("Mıknatıslar bağlandığında ENTER tuşuna basın")
 
 # Drone ayarlamalari
@@ -424,7 +438,7 @@ try:
                         print(f"{DRONE_ID}>> {obj} ortalanamadi")
                     else:
                         print(f"{DRONE_ID}>> {obj} ortalandi yuk birakiliyor")
-                        #drop_obj(miknatis)
+                        drop_obj(miknatis, magnet_control)
                         print(f"{DRONE_ID}>> Drone {obj} yükünü bıraktı")
                     
                         dropped_objects.append(obj)
@@ -462,7 +476,7 @@ try:
                 print(f"{DRONE_ID}>> {sonra_birakilcak_obj} ortalanamadi")
             else:
                 print(f"{DRONE_ID}>> {sonra_birakilcak_obj} ortalandi yuk birakiliyor")
-                #!drop_obj(miknatis)
+                drop_obj(miknatis, magnet_control)
                 print(f"{DRONE_ID}>> Drone {sonra_birakilcak_obj} yükünü bıraktı")
             
                 dropped_objects.append(sonra_birakilcak_obj)
@@ -504,7 +518,7 @@ try:
                         print(f"{DRONE_ID}>> {sonra_birakilcak_obj} ortalanamadi")
                     else:
                         print(f"{DRONE_ID}>> {sonra_birakilcak_obj} ortalandi yuk birakiliyor")
-                        #drop_obj(miknatis)
+                        drop_obj(miknatis, magnet_control)
                         print(f"{DRONE_ID}>> Drone {sonra_birakilcak_obj} yükünü bıraktı")
                     
                         dropped_objects.append(sonra_birakilcak_obj)
@@ -545,6 +559,6 @@ except Exception as e:
 
 finally:
     vehicle.vehicle.close()
-    input("Servoyu kapatmak için Enter'a basın")
-    #!cleanup()
+    input("Ucusu bitirmek icin Enter'a basın")
+    magnet_control.cleanup()
     print("GPIO temizlendi, bağlantı kapatıldı")

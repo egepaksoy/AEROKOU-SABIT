@@ -1,9 +1,9 @@
-from libs.mqtt_controller import Mqtt_Control
+from libs.mqtt_controller import ESP_Controller
 import sys
 import time
 
+magnet_control = ESP_Controller()
 try:
-    magnet_control = Mqtt_Control()
     if len(sys.argv) == 2:
         if int(sys.argv[1]) == 1:
             magnet_control.magnet_control(True, False)
