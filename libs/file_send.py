@@ -2,11 +2,7 @@ import socket
 import datetime
 import os
 
-FOLDER = "ucuslar"              # Videoların klasörü
-SERVER_IP = "192.168.0.119"      # Windows cihazın IP adresi
-SERVER_PORT = 5001              # Alıcı port (Windows tarafında açık olmalı)
-
-def send_file(filepath, server_ip, server_port=5001):
+def send_file(filepath, server_ip="192.168.0.119", server_port=5001):
     filesize = os.path.getsize(filepath)
     filename = os.path.basename(filepath)
 
@@ -27,12 +23,12 @@ def send_file(filepath, server_ip, server_port=5001):
 
         print(f"{filename} Gönderim tamamlandı.")
 
-def send_today_videos():
+def send_today_videos(folder="ucusalar", ip="192.168.0.119", port=5001):
     today_str = datetime.now().strftime("%Y-%m-%d")  # Örn: 2025-09-06
     print(f"Bugünkü videolar ({today_str}) aranıyor...")
 
     # "ucuslar" klasöründeki bütün dosyaları listele
-    for filename in os.listdir(FOLDER):
+    for filename in os.listdir(folder):
         if filename.startswith(f"ucus-{today_str}"):  # Bugünkü videolar
-            filepath = os.path.join(FOLDER, filename)
-            send_file(filepath, SERVER_IP, SERVER_PORT)
+            filepath = os.path.join(folder, filename)
+            send_file(filepath, ip, port)

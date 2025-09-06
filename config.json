@@ -9,6 +9,5 @@
     },
     "ORTA": 0.3,
     "UDP-PORT": 9999,
-    "OBJECTS": {"Altigen": {"sira": 1, "miknatis": 2}, "Ucgen": {"sira": 2, "miknatis": 1}},
-    "RASP-IP": "192.168.0.120"
+    "OBJECTS": {"Altigen": {"sira": 1, "miknatis": 2}, "Ucgen": {"sira": 2, "miknatis": 1}}
 }
