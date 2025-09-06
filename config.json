@@ -1,9 +1,11 @@
 {
-    "CONN-STR": "com16",
+    "CONN-STR": "/dev/ttyACM0",
     "DRONE":
     {
         "id": 1,
-        "alt": 5
+        "alt": 6,
+        "max_alt": 15,
+        "yukselme_sayisi": 2
     },
     "ORTA": 0.3,
     "UDP-PORT": 9999,

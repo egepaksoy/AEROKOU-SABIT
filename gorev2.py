@@ -118,7 +118,7 @@ def ortala(obj_origin, DRONE_ID, shared_state, shared_state_lock, orta_oran, car
     total_alt = first_alt
 
     if True:
-        yukselme = 2
+        yukselme = config["DRONE"]["yukselme_sayisi"]
         total_alt = first_alt
 
         while not stop_event.is_set():
@@ -153,7 +153,7 @@ def ortala(obj_origin, DRONE_ID, shared_state, shared_state_lock, orta_oran, car
 
             total_alt += yukselme
 
-            if total_alt >= 10:
+            if total_alt >= config["DRONE"]["max_alt"]:
                 print(f"{DRONE_ID}>> Cok yukseldi alcalip taramaya devam ediyor")
                 vehicle.go_to(loc=first_pos, alt=first_alt, drone_id=DRONE_ID)
                 while abs(vehicle.get_pos(drone_id=DRONE_ID)[2] - first_alt) > 0.1 and not stop_event.is_set():
@@ -222,40 +222,8 @@ def ortala(obj_origin, DRONE_ID, shared_state, shared_state_lock, orta_oran, car
             time.sleep(0.05)
         
         print(f"{DRONE_ID}>> Hedefe donuldu")
-        #TODO: bunu kaldir
         x_centered = True
         break
-
-        with shared_state_lock:
-            obj = shared_state["last_object"]
-            obj_pos = shared_state["object_pos"]
-            screen_res = shared_state["screen_res"]
-
-        if obj != None:
-            old_pos = obj_pos
-            start_time = time.time()
-            while time.time() - start_time <= 0.2:
-                with shared_state_lock:
-                    obj = shared_state["last_object"]
-                    obj_pos = shared_state["object_pos"]
-                    screen_res = shared_state["screen_res"]
-                
-                if obj != None:
-                    if is_near(old_pos=old_pos, pos=obj_pos):
-                        break
-                
-                time.sleep(0.01)
-            
-            if obj != None:
-                if not is_near(old_pos=old_pos, pos=obj_pos):
-                    obj = None
-        
-        if obj == None:
-            print("Nesne kayboldu")
-            return False
-        
-        if camera_distance(obj_pos, screen_res, orta_oran)[0] == 0:
-            x_centered = True
 
     #? Dronu nesneye ilerletme
     start_time_drone = time.time()
