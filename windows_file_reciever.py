@@ -1,8 +1,12 @@
 import socket
+import os
 
-def receive_file(save_dir="C:/Users/Public/Videos/"):
-    host = "0.0.0.0"  # Herkesten dinle
+def receive_files(save_dir="C:/Users/Public/Videos/ucuslar/"):
+    host = "0.0.0.0"  # Tüm ağ arayüzlerinden dinle
     port = 5001
+
+    # Klasör yoksa oluştur
+    os.makedirs(save_dir, exist_ok=True)
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
@@ -13,10 +17,11 @@ def receive_file(save_dir="C:/Users/Public/Videos/"):
         conn, addr = server_socket.accept()
         print(f"{addr} bağlandı.")
 
-        # İlk gelen satır dosya adıdır
+        # Dosya adını al
         filename = conn.recv(1024).decode().strip()
-        filepath = save_dir + filename
+        filepath = os.path.join(save_dir, filename)
 
+        # Dosya verisini kaydet
         with open(filepath, "wb") as f:
             while True:
                 data = conn.recv(4096)
@@ -28,4 +33,4 @@ def receive_file(save_dir="C:/Users/Public/Videos/"):
         conn.close()
 
 if __name__ == "__main__":
-    receive_file()
+    receive_files()
