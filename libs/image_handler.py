@@ -1,13 +1,25 @@
 import cv2
 import threading
-import time
 import numpy as np
 from flask import Flask, Response
+from datetime import datetime
+import os
+import time
+from file_send import send_file
+
 
 last_frame = None
 
 def image_recog_flask(cam, port, broadcast_started, stop_event, shared_state, shared_state_lock, oran=0.3):
     app = Flask(__name__)
+
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = None  # Video kaydedici (başlangıçta None)
+
+    os.makedirs("ucuslar", exist_ok=True)
+
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    video_filename = os.path.join("ucuslar", f"ucus-{now}.avi")
 
     def is_equilateral(approx, tolerance=0.15):
         if len(approx) < 3:
@@ -70,6 +82,15 @@ def image_recog_flask(cam, port, broadcast_started, stop_event, shared_state, sh
                     frame = cv2.flip(frame, 1)
                     screen_res = (frame.shape[:2][1], frame.shape[:2][0])
 
+                # Eğer VideoWriter başlatılmadıysa, çözünürlüğe göre başlat
+                if out is None:
+                    out = cv2.VideoWriter(
+                        video_filename, 
+                        fourcc, 
+                        20.0, 
+                        (frame.shape[1], frame.shape[0])
+                )
+
                 detected_obj = ""
                 object_pos = None
 
@@ -111,6 +132,10 @@ def image_recog_flask(cam, port, broadcast_started, stop_event, shared_state, sh
                 
                 visualize_box(frame, screen_res, oran)
 
+                # Video kaydet
+                if out is not None:
+                    out.write(frame)
+
                 # 3. Görüntüyü paylaş
                 with frame_lock:
                     last_frame = frame.copy()
@@ -122,4 +147,10 @@ def image_recog_flask(cam, port, broadcast_started, stop_event, shared_state, sh
 
         return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-    app.run(host='0.0.0.0', port=port)
+    try:
+        app.run(host='0.0.0.0', port=port)
+    finally:
+        if out is not None:
+            out.release()
+            time.sleep(3)
+            send_file(video_filename, "192.168.0.119")
